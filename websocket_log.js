@@ -1,6 +1,6 @@
 // how to use:
 //  include following in <head> tag
-//  <script language="javascript" src="websocket_log.js" />
+//  <script language="javascript" src="websocket_log.js"></script>
 
 class WSClient {
   constructor(host, port) {

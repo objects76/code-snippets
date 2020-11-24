@@ -1,0 +1,82 @@
+<html>
+  <head>
+    <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
+    <script language="javascript" src="logs2indexeddb.js"></script>
+    <!-- <script language="javascript" src="websocket_log.js"></script> -->
+  </head>
+
+  <body>
+    <h1>Logs2indexeddb test</h1>
+    <p>
+      This test turns on l2i (logs2indexeddb) utility and write a few messages like<br />
+      <code
+        >one<br />
+        two<br />
+        three</code
+      ><br />
+      using <code>console.log()</code> method. <br />
+      You can check that there are messages in common console window and also in IndexedDB database named
+      <code>logs2indexeddb</code> (open Resources tab in Javascript Console window and check that in IndexedDB ->
+      logs2indexeddb -> logs->).
+    </p>
+
+    <br />
+    <br />
+    <button id="download">Download logs from IndexedDB</button>
+    <br />
+    <button id="test">Test....</button>
+    <br />
+    <button id="test2">wslog test....</button>
+    <div id="toast"></div>
+  </body>
+  <script type="module" src="./index.js"></script>
+
+  <!-- 
+  <script>
+    import { toast } from "toast.js";
+    
+
+    // TEST
+    // TEST
+    // TEST
+    document.querySelector("#test").addEventListener("click", function () {
+      wslog.log("message1", 1234, "end string...");
+      console.log(typeof toast);
+      toast("handled....", "toast");
+    });
+  </script>
+
+  <script>
+    function sleep(ms) {
+      var start = new Date().getTime(),
+        expire = start + ms;
+      while (new Date().getTime() < expire) {}
+      return;
+    }
+
+    // time consumming task..
+    function async_task(name) {
+      return new Promise((res, err) => setTimeout(res, 500));
+    }
+
+    function async_sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    window.addEventListener("unload", (evt) => {
+      let handled = false;
+      const task = async () => {
+        await async_sleep(500);
+        handled = true;
+        wslog.log("handled...");
+        window.alert("handled....");
+      };
+      task();
+
+      for (let i = 0; i < 10; ++i) {
+        // sleep(300);
+        wslog.log(`unload -------------------------- ${i}`);
+      }
+    });
+  </script> -->
+</html>

@@ -23,6 +23,7 @@ export function toast(msg, permanent = false, selector = "#toast") {
       z-index: 10000;
     `;
   }
+
   const isVisible = toastUI.style.visibility === "visible";
   if (isVisible && timeoutId) clearTimeout(timeoutId);
   timeoutId = undefined;
