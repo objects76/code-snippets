@@ -32,8 +32,10 @@ export default function Emitter() {
   this.off = function (type, listener) {
     if (!this.events[type]) return this;
 
-    if (!listener) delete this.events[type];
-    else if (typeof this.events[type] === "function") {
+    if (!listener) {
+      // remove all listeners for type.
+      delete this.events[type];
+    } else if (typeof this.events[type] === "function") {
       if (this.events[type] === listener) delete this.events[type];
     } else {
       this.events[type] = this.events[type].filter((item) => item !== listener);
@@ -44,22 +46,19 @@ export default function Emitter() {
   };
 
   this.once = function (type, listener) {
-    function onceWrapper() {
-      if (!this.fired) {
-        this.target.off(this.type, this.wrapFn);
-        this.fired = true;
-        if (arguments.length === 0) return this.listener.call(this.target);
-        return this.listener.apply(this.target, arguments);
-      }
+    function onceListener() {
+      this.emitter.off(this.type, this.wrapFn);
+      return arguments.length ? this.listener(...arguments) : this.listener();
     }
-    function _onceWrap(target, type, listener) {
-      const state = { fired: false, wrapFn: undefined, target, type, listener };
-      const wrappedHandler = onceWrapper.bind(state);
-      wrappedHandler.listener = listener;
-      state.wrapFn = wrappedHandler;
-      return wrappedHandler;
+
+    function wrap(emitter, type, listener) {
+      const cxt = { emitter, type, listener, wrapFn: undefined };
+      const wrapped = onceListener.bind(cxt);
+      cxt.wrapFn = wrapped;
+      return wrapped;
     }
-    return this.on(type, _onceWrap(this, type, listener));
+
+    return this.on(type, wrap(this, type, listener));
   };
 
   this.emit = function (type, ...args) {
@@ -103,25 +102,18 @@ export default function Emitter() {
 //
 // test main
 //
-if (window.emitter_test) {
-  const cleaner1 = add(window, "beforeunload", () => console.log("> before unload"));
-  const cleaner2 = add(window, "load", () => console.log("> before unload"));
-  const cleaner3 = cleaner1;
+const emitterOnce = new Emitter();
+emitterOnce.once("once_event", fonce);
+emitterOnce.emit("once_event", 0, 1, 0);
+emitterOnce.emit("once_event", 0, 1, 0);
+function fonce(a, b, c) {
+  console.log("fonce:", [a, b, c].join(", "));
+}
 
-  console.log("cleaner1 === cleaner2:", cleaner1.unsubscribes2() === cleaner2.unsubscribes2());
-  console.log("cleaner1.unsubscribes:", cleaner1.unsubscribes2());
-  console.log("cleaner2.unsubscribes:", cleaner2.unsubscribes2());
-
-  console.log("cleaner1 === cleaner2:", cleaner1.add === cleaner2.add);
-
-  const cleaner = add(window, "beforeunload", () => console.log("> before unload"))
-    .add(window, "load", () => console.log("> loaded"))
-    .add(window, "unload", () => console.log("> unload"));
-
-  addTestWidget(`<button>call cleaner</button>`, async (evt) => {
-    cleaner();
-  });
-
+if (window.emitter_test && false) {
+  const emitterOnce = new Emitter();
+  emitterOnce.once("once_event", fonce);
+  emitterOnce.emit("once_event", 0, 1, 0);
   //
   // test
   console.log("---run---");
