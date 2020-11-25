@@ -101,40 +101,6 @@ export default function Emitter() {
 } // eof Emittor
 
 //
-// ref: https://github.com/skt-t1-byungi/clearall/blob/master/index.ts
-//
-export function add(target, type, listener, ...args) {
-  const _unsubscribes = [];
-
-  function clearAll() {
-    console.debug("clear all event listeners");
-    _unsubscribes.splice(0).forEach((fn) => fn());
-  }
-
-  // function instance property
-  clearAll.add = (o, name, listener, ...params) => {
-    _subscribe(o, name, listener, params);
-    return clearAll;
-  };
-
-  if (target && listener) _subscribe(target, type, listener, args);
-
-  return clearAll; // return function object reference.
-
-  function _subscribe(target, type, listener, args) {
-    console.debug("subscribe for", type);
-    const on = target.addEventListener || target.addListener || target.on || target.subscribe;
-    if (typeof on !== "function") throw new TypeError("Target is not listenable.");
-
-    const f = on.call(target, type, listener, ...args);
-    if (typeof f === "function") return _unsubscribes.push(f);
-
-    const off = target.removeEventListener || target.removeListener || target.off || target.unsubscribe;
-    if (typeof off === "function") return _unsubscribes.push(() => off.call(target, type, listener));
-  }
-}
-
-//
 // test main
 //
 if (window.emitter_test) {
