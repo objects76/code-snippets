@@ -20,23 +20,22 @@ function devInit(...args) {
 devInit();
 
 // override console.log with prefix and postfix with source position.
-const consoleBackup = { ...console };
 function consoleBind(prefix) {
   function at() {
     const caller = new Error().stack.split("\n")[3].trim();
-    const tokens = caller.split(" ").filter((e) => e.length);
-    const pos = tokens[tokens.length - 1];
+    const tokens = caller.split(" ").filter((e) => !!e.length);
+    const srcpos = tokens[tokens.length - 1];
 
-    return `[${tokens[1]}(), ${pos.slice(pos.lastIndexOf("/") + 1, -1)}]`;
-    //return { name: tokens[1], pos: pos.slice(pos.lastIndexOf("/") + 1, -1) };
+    return `[${tokens[1]}(), ${srcpos.slice(srcpos.lastIndexOf("/") + 1, -1)}]`; // function
   }
 
-  console.log = (...args) => consoleBackup.log(prefix || "", ...args, at());
-  console.info = (...args) => consoleBackup.info(prefix || "", ...args, at());
-  console.error = (...args) => consoleBackup.error(prefix || "", ...args, at());
-  console.warn = (...args) => consoleBackup.warn(prefix || "", ...args, at());
-  console.trace = (...args) => consoleBackup.trace(prefix || "", ...args, at());
-  console.debug = (...args) => consoleBackup.debug(prefix || "", ...args, at());
+  if (typeof consoleBind.backup === "undefined") consoleBind.backup = { ...console };
+  console.log = (...args) => consoleBind.backup.log(prefix || "", ...args, at());
+  console.info = (...args) => consoleBind.backup.info(prefix || "", ...args, at());
+  console.error = (...args) => consoleBind.backup.error(prefix || "", ...args, at());
+  console.warn = (...args) => consoleBind.backup.warn(prefix || "", ...args, at());
+  console.trace = (...args) => consoleBind.backup.trace(prefix || "", ...args, at());
+  console.debug = (...args) => consoleBind.backup.debug(prefix || "", ...args, at());
 }
 
 // get [min, max)

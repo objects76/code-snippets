@@ -4,10 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Event(Callback) tests</title>
-    <link rel="manifest" href="manifest.json" />
+    <title>indexeddb1</title>
   </head>
   <body></body>
-  <script src="Devtools.js"></script>
-  <script src="EventTest.js" type="module"></script>
+  <script>
+    window.IDBBlobTest = true;
+  </script>
+  <script src="./IDBBlobWithTick.js" type="module"></script>
+  <!-- <script src="./blobwrite.js" type="module"></script> -->
 </html>

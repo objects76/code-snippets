@@ -21,19 +21,21 @@ function test1() {
   function OnE2() {
     console.log("enter OnE2");
   }
+  let id = 0;
   async function OnE3() {
     // handle state transition with waitEvent(Promise),
     // ex) wait E1.E2 then E1.E3, and then E1.E4.
-    console.log("enter");
+    const e3id = ++id;
+    console.log(e3id, "enter");
     const from = await waitEvent("E1.E2");
-    console.log("do something on E1.E2 state:", from ? from : "");
+    console.log(e3id, "do something on E1.E2 state:", from ? from : "");
 
     //await waitEvent("E1.E3");
     //console.log("do something on E1.E3 state:", from ? from : "");
 
     //await waitEvent("E1.E4");
 
-    console.log("exit");
+    console.log(e3id, "exit");
   }
 
   //-------------------------------
@@ -57,4 +59,16 @@ function test1() {
   addTestWidget("<button>Fire E1.E2</button>", () => emitter0.emit("E1.E2"));
 }
 
-test1();
+// test1();
+
+async function test2() {
+  consoleBind("[browser]");
+  console.log(window.name);
+  //   const windows = await browser.windows.getAll({
+  //     populate: true,
+  //     windowTypes: ["normal"],
+  //   });
+  //   console.log(windows);
+}
+
+test2();
