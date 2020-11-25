@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <style>
+      video {
+        width: 100%;
+        height: 100%;
+        margin: 10px 0;
+      }
+    </style>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <video id="mainVideo" autoplay playsinline="" webkit-playsinline="1" controls="1">
+      <source src="./screen-rec-720p.mp4" type="video/mp4" />
+    </video>
+
+    <button id="btnStart">Start</button>
+    <button id="btnStop">Stop</button>
+    <button id="btnResult">Show Result</button>
+    <video id="displayVideo" autoplay playsinline="" webkit-playsinline="1" controls="1" muted></video>
+  </body>
+
+  <script>
+    // feature check
+    console.assert("function" === typeof HTMLCanvasElement.prototype.captureStream);
+    console.assert("function" === typeof HTMLVideoElement.prototype.captureStream);
+
+    const log = console.log.bind(console, "[rec]");
+    const mainVideo = document.querySelector("#mainVideo");
+    const displayVideo = document.querySelector("#displayVideo");
+
+    const btnStart = document.querySelector("#btnStart");
+    const btnStop = document.querySelector("#btnStop");
+    const btnResult = document.querySelector("#btnResult");
+
+    //https://stackoverflow.com/questions/52720894/is-it-possible-to-use-the-mediarecorder-api-with-html5-video
+
+    function StreamRecorder(stream, fileName) {
+      console.log("stream in recorder:", stream);
+      const options = {
+        audioBitsPerSecond: 128 * 1000,
+        videoBitsPerSecond: 1 * 1000 * 1000, // default 2.5M
+        // mimeType: "video/webm",
+        // mimeType: "video/mp4",
+      };
+      if (options.mimeType?.indexOf("/webm") > 0) fileName += ".webm";
+
+      fileName = "detailed-" + fileName;
+      stream = stream.clone();
+      setVideoTrackContentHints(stream, "detailed");
+      setVideoTrackContentHints(stream, "detail");
+      options.audioBitsPerSecond = 64 * 1000;
+      options.videoBitsPerSecond = 500 * 1000;
+
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorder.addEventListener("pause", (ev) => log(ev.type));
+      mediaRecorder.addEventListener("resume", (ev) => log(ev.type));
+      mediaRecorder.addEventListener("start", (ev) => log(ev.type));
+      mediaRecorder.addEventListener("stop", (ev) => log(ev.type));
+      mediaRecorder.addEventListener("error", (ev) => log(ev.type, ev));
+
+      let writer = new StreamSaverWriter(fileName);
+
+      let recordedSecond = 0;
+      mediaRecorder.ondataavailable = (evt) => {
+        log(`blob length= ${evt.data.size}`);
+        writer?.write(evt.data);
+        if (++recordedSecond === 20) btnStop.click();
+      };
+
+      mediaRecorder.start(1000); // 1sec timeslice
+
+      this.close = function () {
+        if (!writer) return;
+        log("stopRecording");
+        for (const track of [...stream.getAudioTracks(), ...stream.getVideoTracks()]) track.stop();
+        mediaRecorder.stop();
+        writer.close();
+        writer = undefined;
+      };
+    }
+
+    let mediaRecorder;
+    btnStop.disabled = true;
+    btnResult.disabled = true;
+
+    let frameControl;
+    btnStart.onclick = async () => {
+      const stream = mainVideo.captureStream(1);
+      mediaRecorder = new StreamRecorder(stream, "test.mp4");
+
+      btnStart.disabled = true;
+      btnStop.disabled = btnResult.disabled = false;
+    };
+
+    btnStop.onclick = () => {
+      log("stopRecording");
+      mediaRecorder?.close();
+
+      btnStop.disabled = true;
+      btnStart.disabled = btnResult.disabled = false;
+    };
+    mainVideo.onloadeddata = () => btnStart.click();
+    displayVideo.style.display = "none";
+  </script>
+
+  <script>
+    //
+    // pc
+    //
+    const offerOptions = {
+      offerToReceiveAudio: 0,
+      offerToReceiveVideo: 1,
+    };
+    function setVideoTrackContentHints(stream, hint) {
+      const tracks = stream.getVideoTracks();
+      tracks.forEach((track) => {
+        if ("contentHint" in track) {
+          track.contentHint = hint;
+          if (track.contentHint !== hint) {
+            console.log(`set ${hint}, but ${track.contentHint}`);
+          } else {
+            console.log(`set ${hint}, and value is ${track.contentHint}`);
+          }
+        } else {
+          console.log("MediaStreamTrack contentHint attribute not supported");
+        }
+      });
+    }
+
+    function getPeerConnectionStream(stream) {
+      stream = stream.clone();
+      setVideoTrackContentHints(stream, "detailed");
+      setVideoTrackContentHints(stream, "detail");
+
+      // setVideoTrackContentHints(stream, "fluid");
+      // setVideoTrackContentHints(stream, "motion");
+
+      const pcStream = new RTCPeerConnection(null);
+      const pcVidTag = new RTCPeerConnection(null);
+      pcStream.onicecandidate = (e) => onIceCandidate(pcStream, pcVidTag, e);
+      pcVidTag.onicecandidate = (e) => onIceCandidate(pcVidTag, pcStream, e);
+
+      stream.getTracks().forEach((track) => pcStream.addTrack(track, stream));
+
+      pcStream
+        .createOffer(offerOptions)
+        .then((desc) => {
+          pcStream
+            .setLocalDescription(desc)
+            .then(() => pcVidTag.setRemoteDescription(desc))
+            .then(() => pcVidTag.createAnswer())
+            .then((answerDesc) => onCreateAnswerSuccess(pcStream, pcVidTag, answerDesc))
+            .catch(onSetSessionDescriptionError);
+        })
+        .catch((e) => console.log("Failed to create session description: " + e.toString()));
+
+      return new Promise((resolve, reject) => {
+        pcVidTag.ontrack = (event) => {
+          if (displayVideo.srcObject !== event.streams[0]) {
+            displayVideo.srcObject = event.streams[0];
+            resolve(displayVideo.captureStream());
+          }
+        };
+      });
+      return new Promise((resolve, reject) => {
+        pcVidTag.ontrack = (event) => {
+          resolve(event.streams[0]);
+          console.log("ontrack:", event.streams[0]);
+        };
+      });
+    }
+
+    function establishPC(videoTag, stream) {
+      const pcStream = new RTCPeerConnection(null);
+      const pcVidTag = new RTCPeerConnection(null);
+      pcStream.onicecandidate = (e) => {
+        onIceCandidate(pcStream, pcVidTag, e);
+      };
+      pcVidTag.onicecandidate = (e) => {
+        onIceCandidate(pcVidTag, pcStream, e);
+      };
+      pcVidTag.ontrack = (event) => {
+        if (videoTag.srcObject !== event.streams[0]) {
+          videoTag.srcObject = event.streams[0];
+        }
+      };
+
+      stream.getTracks().forEach((track) => pcStream.addTrack(track, stream));
+
+      pcStream
+        .createOffer(offerOptions)
+        .then((desc) => {
+          pcStream
+            .setLocalDescription(desc)
+            .then(() => pcVidTag.setRemoteDescription(desc))
+            .then(() => pcVidTag.createAnswer())
+            .then((answerDesc) => onCreateAnswerSuccess(pcStream, pcVidTag, answerDesc))
+            .catch(onSetSessionDescriptionError);
+        })
+        .catch((e) => console.log("Failed to create session description: " + e.toString()));
+    }
+
+    function onSetSessionDescriptionError(error) {
+      console.log("Failed to set session description: " + error.toString());
+    }
+
+    function onCreateAnswerSuccess(pc1, pc2, desc) {
+      // Hard-code video bitrate to 50kbps.
+      const videoBitrate = 500;
+      desc.sdp = desc.sdp.replace(/a=mid:(.*)\r\n/g, "a=mid:$1\r\nb=AS:" + videoBitrate + "\r\n");
+      pc2
+        .setLocalDescription(desc)
+        .then(() => pc1.setRemoteDescription(desc))
+        .catch(onSetSessionDescriptionError);
+    }
+
+    function onIceCandidate(pc, otherPc, event) {
+      otherPc.addIceCandidate(event.candidate);
+    }
+
+    function pcTest() {
+      const stream = mainVideo.captureStream(1);
+      const detailStream = stream.clone();
+      setVideoTrackContentHints(detailStream, "detailed");
+      setVideoTrackContentHints(detailStream, "detail");
+      establishPC(displayVideo, detailStream);
+
+      // const motionStream = stream.clone();
+      // setVideoTrackContentHints(motionStream, "fluid");
+      // setVideoTrackContentHints(motionStream, "motion");
+      // establishPC(displayVideo, motionStream);
+    }
+    //mainVideo.onloadeddata = () => pcTest();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
+  <script>
+    function StreamSaverWriter(fileName) {
+      let fr = new FileReader();
+      let chunks = Promise.resolve();
+      let fileStream = streamSaver.createWriteStream(fileName);
+      let writer = fileStream.getWriter();
+
+      this.close = function () {
+        setTimeout(() => chunks.then((evt) => writer.close()), 1000);
+      };
+
+      this.write = function (blob) {
+        chunks = chunks.then(
+          () =>
+            new Promise((resolve) => {
+              fr.onload = () => {
+                writer.write(new Uint8Array(fr.result));
+                resolve();
+              };
+              fr.readAsArrayBuffer(blob);
+            })
+        );
+      };
+    }
+  </script>
+</html>

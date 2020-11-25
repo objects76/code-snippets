@@ -74,7 +74,7 @@ export default function Emitter() {
     }
 
     if (!this.events[type]) {
-      console.debug(`no listener for ${type}`);
+      console.warn(`no listener for ${type}`);
       return false;
     }
 
@@ -104,36 +104,50 @@ export default function Emitter() {
 // ref: https://github.com/skt-t1-byungi/clearall/blob/master/index.ts
 //
 export function add(target, type, listener, ...args) {
-  const unsubscribes = [];
+  const _unsubscribes = [];
 
   function clearAll() {
     console.debug("clear all event listeners");
-    unsubscribes.splice(0).forEach((fn) => fn());
+    _unsubscribes.splice(0).forEach((fn) => fn());
   }
 
-  clearAll.subscribe = (target, type, listener, args) => {
-    console.log("+", type);
-    const on = target.addEventListener || target.addListener || target.on || target.subscribe;
-    if (typeof on !== "function") throw new TypeError("`Add Listener` method was not found.");
-
-    const f = on.call(target, type, listener, ...args);
-    if (typeof f === "function") return unsubscribes.push(f);
-
-    const off = target.removeEventListener || target.removeListener || target.off || target.unsubscribe;
-    if (typeof off === "function") return unsubscribes.push(() => off.call(target, type, listener));
-  };
-
+  // function instance property
   clearAll.add = (o, name, listener, ...params) => {
-    clearAll.subscribe(o, name, listener, params);
+    _subscribe(o, name, listener, params);
     return clearAll;
   };
 
-  if (target && listener) clearAll.subscribe(target, type, listener, args);
+  if (target && listener) _subscribe(target, type, listener, args);
 
-  return clearAll;
+  return clearAll; // return function object reference.
+
+  function _subscribe(target, type, listener, args) {
+    console.debug("subscribe for", type);
+    const on = target.addEventListener || target.addListener || target.on || target.subscribe;
+    if (typeof on !== "function") throw new TypeError("Target is not listenable.");
+
+    const f = on.call(target, type, listener, ...args);
+    if (typeof f === "function") return _unsubscribes.push(f);
+
+    const off = target.removeEventListener || target.removeListener || target.off || target.unsubscribe;
+    if (typeof off === "function") return _unsubscribes.push(() => off.call(target, type, listener));
+  }
 }
 
+//
+// test main
+//
 if (window.emitter_test) {
+  const cleaner1 = add(window, "beforeunload", () => console.log("> before unload"));
+  const cleaner2 = add(window, "load", () => console.log("> before unload"));
+  const cleaner3 = cleaner1;
+
+  console.log("cleaner1 === cleaner2:", cleaner1.unsubscribes2() === cleaner2.unsubscribes2());
+  console.log("cleaner1.unsubscribes:", cleaner1.unsubscribes2());
+  console.log("cleaner2.unsubscribes:", cleaner2.unsubscribes2());
+
+  console.log("cleaner1 === cleaner2:", cleaner1.add === cleaner2.add);
+
   const cleaner = add(window, "beforeunload", () => console.log("> before unload"))
     .add(window, "load", () => console.log("> loaded"))
     .add(window, "unload", () => console.log("> unload"));
