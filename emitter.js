@@ -97,6 +97,47 @@ export default function Emitter() {
     this.events = {};
     return this;
   };
+
+  // for debugging.
+  this.onceListeners = (type) => {
+    const types = [];
+    const count = (type, listeners) => {
+      if (!listeners) return;
+      if (typeof listeners === "function") {
+        if (listeners.name.startsWith("bound ")) types.push(type + ".!");
+      } else {
+        for (const l of listeners) {
+          if (l.name.startsWith("bound ")) types.push(type + ".!");
+        }
+      }
+    };
+
+    if (type) {
+      count(type, this.events[type]);
+    } else {
+      for (const [key, value] of Object.entries(this.events)) count(key, value);
+    }
+    return types;
+  };
+
+  this.listeners = (type) => {
+    const types = [];
+    const count = (type, listeners) => {
+      if (!listeners) return;
+      if (typeof listeners === "function") {
+        types.push(type + (listeners.name.startsWith("bound ") ? ".!" : ""));
+      } else {
+        for (const l of listeners) types.push(type + (l.name.startsWith("bound ") ? ".!" : ""));
+      }
+    };
+
+    if (type) {
+      count(type, this.events[type]);
+    } else {
+      for (const [key, value] of Object.entries(this.events)) count(key, value);
+    }
+    return types;
+  };
 } // eof Emittor
 
 //
@@ -110,14 +151,10 @@ function fonce(a, b, c) {
   console.log("fonce:", [a, b, c].join(", "));
 }
 
-if (window.emitter_test && false) {
-  const emitterOnce = new Emitter();
-  emitterOnce.once("once_event", fonce);
-  emitterOnce.emit("once_event", 0, 1, 0);
+if (window.emitter_test) {
   //
   // test
   console.log("---run---");
-  const emitter = new Emitter();
   function f1(a, b, c) {
     console.log("f1:", [a, b, c].join(", "));
   }
@@ -128,16 +165,24 @@ if (window.emitter_test && false) {
     console.log("fonce:", [a, b, c].join(", "));
   }
 
+  const emitter = new Emitter();
+  emitter.once("event2", fonce);
   emitter.on("event1", f1);
-  emitter.once("event1", fonce);
   emitter.once("event1", fonce);
   emitter.on("event1", f2);
 
-  console.log(emitter);
+  console.assert(
+    JSON.stringify(emitter.onceListeners()) === JSON.stringify(["event2.!", "event1.!"]),
+    emitter.onceListeners()
+  );
+  console.assert(
+    JSON.stringify(emitter.listeners()) === JSON.stringify(["event2.!", "event1", "event1.!", "event1"]),
+    emitter.listeners()
+  );
 
   emitter.emit("event1", 1, 2, 3);
   emitter.emit("event1", 4, 5, 6);
-
+  console.assert(JSON.stringify(emitter.onceListeners()) === JSON.stringify(["event2.!"]), emitter.onceListeners());
   // allOff(emitter);
   console.log(`after: emitter.off("event1", f1);`);
   emitter.off("event1", f1);

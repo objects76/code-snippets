@@ -9,21 +9,24 @@
             "request": "launch",
             "name": "indexdb1",
             "url": "http://localhost:5502/indexdb1.html",
-            "webRoot": "${workspaceFolder}"
+            "webRoot": "${workspaceFolder}",
+            "runtimeArgs": ["-auto-open-devtools-for-tabs", "--disable-session-crashed-bubble"],
         },
         {
             "type": "chrome",
             "request": "launch",
             "name": "emitter",
             "url": "http://localhost:5502/emitter.html",
-            "webRoot": "${workspaceFolder}"
+            "webRoot": "${workspaceFolder}",
+            "runtimeArgs": ["-auto-open-devtools-for-tabs", "--disable-session-crashed-bubble"],
         },
         {
             "type": "chrome",
             "request": "launch",
             "name": "clearall",
             "url": "http://localhost:5502/clearall.html",
-            "webRoot": "${workspaceFolder}"
+            "webRoot": "${workspaceFolder}",
+            "runtimeArgs": ["-auto-open-devtools-for-tabs", "--disable-session-crashed-bubble"],
         }
     ]
 }
