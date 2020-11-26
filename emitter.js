@@ -13,7 +13,7 @@
 // emitter.hasListeners(type?);
 // emitter.clear();
 //
-export default function Emitter() {
+export default function EventEmitter() {
   this.events = {};
 
   this.on = function (type, listener) {
@@ -143,14 +143,6 @@ export default function Emitter() {
 //
 // test main
 //
-const emitterOnce = new Emitter();
-emitterOnce.once("once_event", fonce);
-emitterOnce.emit("once_event", 0, 1, 0);
-emitterOnce.emit("once_event", 0, 1, 0);
-function fonce(a, b, c) {
-  console.log("fonce:", [a, b, c].join(", "));
-}
-
 if (window.emitter_test) {
   //
   // test
@@ -165,7 +157,7 @@ if (window.emitter_test) {
     console.log("fonce:", [a, b, c].join(", "));
   }
 
-  const emitter = new Emitter();
+  const emitter = new EventEmitter();
   emitter.once("event2", fonce);
   emitter.on("event1", f1);
   emitter.once("event1", fonce);

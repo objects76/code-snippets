@@ -29,13 +29,14 @@ function consoleBind(prefix) {
     return `[${tokens[1]}(), ${srcpos.slice(srcpos.lastIndexOf("/") + 1, -1)}]`; // function
   }
 
+  console.indent = "";
   if (typeof consoleBind.backup === "undefined") consoleBind.backup = { ...console };
-  console.log = (...args) => consoleBind.backup.log(prefix || "", ...args, at());
-  console.info = (...args) => consoleBind.backup.info(prefix || "", ...args, at());
-  console.error = (...args) => consoleBind.backup.error(prefix || "", ...args, at());
-  console.warn = (...args) => consoleBind.backup.warn(prefix || "", ...args, at());
-  console.trace = (...args) => consoleBind.backup.trace(prefix || "", ...args, at());
-  console.debug = (...args) => consoleBind.backup.debug(prefix || "", ...args, at());
+  console.log = (...args) => consoleBind.backup.log((prefix || "") + console.indent, ...args, at());
+  console.info = (...args) => consoleBind.backup.info((prefix || "") + console.indent, ...args, at());
+  console.error = (...args) => consoleBind.backup.error((prefix || "") + console.indent, ...args, at());
+  console.warn = (...args) => consoleBind.backup.warn((prefix || "") + console.indent, ...args, at());
+  console.trace = (...args) => consoleBind.backup.trace((prefix || "") + console.indent, ...args, at());
+  console.debug = (...args) => consoleBind.backup.debug((prefix || "") + console.indent, ...args, at());
 }
 
 // get [min, max)
@@ -138,7 +139,7 @@ const addTestWidget = (element, callback = undefined, eventName = "click") => {
   if (!callback) return;
 
   const el = document.querySelector("#test-buttons").querySelector(":last-child");
-  if (el) el.addEventListener(eventName, callback);
+  if (el) el.addEventListener(eventName, callback.bind({ widget: el }));
   else console.error(`no element for <${element}>`);
 };
 

@@ -1,12 +1,12 @@
 "use strict";
-import Emitter from "./emitter.js";
+import EventEmitter from "./emitter.js";
 
 function test1() {
   consoleBind("[test1]");
   consoleBind();
 
   console.log("enter test1");
-  const emitter0 = new Emitter();
+  const emitter0 = new EventEmitter();
   //-------------------------------
   emitter0.on("E1", OnE1);
   emitter0.on("E2", OnE2);
