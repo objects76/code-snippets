@@ -32,9 +32,12 @@ export default class Clipboard {
                 navigator.clipboard.readText(); // trigger permission prompt.
                 break;
               case "denied":
-                if (active) alert("Enable clipboard permission to get local clipboard.");
                 this._active = false;
                 this._emitter.emit("active", this._active);
+                if (active) {
+                  alert("Enable clipboard permission to get local clipboard.");
+                  this._emitter.emit("denied"); // maybe for UI about user 'denied' action.
+                }
                 break;
             }
           };
@@ -185,8 +188,8 @@ if (window.test_clipboard) {
   clipboard.onWrite((data) => console.log("onWrite", data));
 
   addTestWidget(`<button>test</button>`, async () => {
+    consoleBind("[test]");
     console.info("ref: https://web.dev/async-clipboard/");
-    consoleBind("[clipboard]");
     console.indent += "\t";
     //console.log('== set text to local clipboared');
     //await navigator.clipboard.writeText(location.href);
@@ -214,18 +217,18 @@ if (window.test_clipboard) {
     //   console.error("Failed to read clipboard contents: ", err);
     // }
 
-    console.log("== read general blob from clipboard: check blob with 'chrome://blob-internals/' ");
-    try {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const clipboardItem of clipboardItems) {
-        for (const type of clipboardItem.types) {
-          const blob = await clipboardItem.getType(type);
-          console.log(`blob from clipboard: ${blob.type}, size=${blob.size}`);
-        }
-      }
-    } catch (err) {
-      console.error(err.name, err.message);
-    }
+    // console.log("== read general blob from clipboard: check blob with 'chrome://blob-internals/' ");
+    // try {
+    //   const clipboardItems = await navigator.clipboard.read();
+    //   for (const clipboardItem of clipboardItems) {
+    //     for (const type of clipboardItem.types) {
+    //       const blob = await clipboardItem.getType(type);
+    //       console.log(`blob from clipboard: ${blob.type}, size=${blob.size}`);
+    //     }
+    //   }
+    // } catch (err) {
+    //   console.error(err.name, err.message);
+    // }
 
     // console.log("== clipboard-read permission");
     // const queryOpts = { name: "clipboard-read", allowWithoutGesture: false };
@@ -243,8 +246,13 @@ if (window.test_clipboard) {
     // console.log(permissionStatus.state);
     // permissionStatus.onchange = () => console.log(permissionStatus.state);
 
-    console.log("== clipboard.waitRead() trigger, if data existed, 'read' event will be fired");
-    clipboard.waitRead(); // read local clipboard.
+    // console.log("== revoke test: deprecated");
+    // console.log("revoke:", navigator.permissions.revoke);
+    // const result = await navigator.permissions.revoke({ name: "clipboard-read" });
+    // console.log("revoke:", result);
+
+    // console.log("== clipboard.waitRead() trigger, if data existed, 'read' event will be fired");
+    // clipboard.waitRead(); // read local clipboard.
 
     console.indent = console.indent.slice(0, -1);
     console.info("done");
