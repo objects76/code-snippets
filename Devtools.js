@@ -23,7 +23,7 @@ devInit();
 function consoleBind(prefix) {
   function at() {
     const caller = new Error().stack.split("\n")[3].trim();
-    const tokens = caller.split(" ").filter((e) => !!e.length);
+    const tokens = caller.split(" ").filter(e => !!e.length);
     const srcpos = tokens[tokens.length - 1];
 
     return `[${tokens[1]}(), ${srcpos.slice(srcpos.lastIndexOf("/") + 1, -1)}]`; // function
@@ -69,7 +69,7 @@ function getTestBlob(n, seed = 0) {
 async function verifyTestBlob(buf, seed = 0) {
   if (!buf) return Promise.reject("null buffer");
 
-  const check = (arrbuf) => {
+  const check = arrbuf => {
     const cptr = new Uint8Array(arrbuf);
     for (let i = 0; i < cptr.length; ++i, ++seed) {
       if (cptr[i] !== seed % 256) {

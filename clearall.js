@@ -7,7 +7,7 @@
 //
 export default function add(target, type, listener, ...args) {
   const actions = [];
-  const closure = () => actions.splice(0).forEach((v) => v());
+  const closure = () => actions.splice(0).forEach(v => v());
   closure.add = (target, type, listener, ...args) => {
     if (target && listener) {
       console.debug(`subscribe for ${type}`);

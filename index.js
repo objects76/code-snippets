@@ -21,6 +21,8 @@ import { toast } from "./toast.js";
 
 // Download a file with logs saved in IndexedDB
 
+const power2 = _ => console.log("void argument");
+
 document.querySelector("#test").addEventListener("click", function () {
   //   wslog.log("message1", 1234, "end string...");
   console.log(typeof toast);

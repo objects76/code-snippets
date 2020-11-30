@@ -63,7 +63,7 @@ export default class KeyboardControl {
   }
 
   // listener.
-  _keyDownListener = (event) => {
+  _keyDownListener = event => {
     this._keyDown(event.keyCode, event.key, event.code);
 
     if (PREVENT_KEYS.includes(event.keyCode)) {
@@ -71,7 +71,7 @@ export default class KeyboardControl {
     }
   };
 
-  _keyUpListener = (event) => {
+  _keyUpListener = event => {
     this._keyUp(event.keyCode, event.key, event.code);
 
     if (PREVENT_KEYS.includes(event.keyCode)) {
