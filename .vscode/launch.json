@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "firefox",
+            "type": "chrome",
             "request": "launch",
             "name": "KeyboardControl",
             "url": "http://localhost:5502/KeyboardControl.html",

@@ -92,6 +92,39 @@ export default class KeyboardControl {
 //
 //
 if (window.test_KeyboardControl) {
+  const TEST = 4430;
+  const FOCUS = 4431;
+  const START = 4432;
+
+  let socket;
+  function sendws(type, data) {
+    if (!socket) {
+      console.log("no socket");
+      return;
+    }
+
+    if (typeof data === "string") {
+      const enc = new TextEncoder();
+      const u8data = enc.encode(data, "utf-8");
+      const buffer = new Uint8Array(4 + u8data.length);
+
+      new DataView(buffer.buffer, 0).setInt32(0, type, true);
+      buffer.set(u8data, 4);
+
+      socket.send(buffer.buffer);
+      console.log("sent ", buffer.length, "bytes", data.length);
+    }
+  }
+
+  window.addEventListener("focus", () => {
+    console.log("focus");
+    sendws(FOCUS, document.title);
+  });
+  window.addEventListener("blur", () => {
+    console.log("blur");
+    sendws(FOCUS, "");
+  });
+
   const keyboard = new KeyboardControl();
   window.onload = () => {
     activate(true);
@@ -106,4 +139,37 @@ if (window.test_KeyboardControl) {
     activate(this.widget.innerText == "start");
   });
   addTestWidget(`<textarea id="story" rows="5" cols="33" style="width:100%"/>`);
+
+  addTestWidget(`<button id='activate'>connect to helper</button>`, function () {
+    socket = new WebSocket("ws://localhost:4430/helper");
+    socket.binaryType = "arraybuffer";
+
+    socket.onopen = function (e) {
+      console.log("[open] Connection established");
+      sendws(FOCUS, document.title);
+    };
+
+    socket.onmessage = function (event) {
+      const dv = new DataView(event.data);
+      const type = dv.getInt32(0, true);
+
+      var decoder = new TextDecoder("utf-8");
+      var decodedString = decoder.decode(new DataView(event.data, 4));
+      console.log(`[message] Data received from server: ${event.data.byteLength}, ${type}/${decodedString}`);
+    };
+
+    socket.onclose = function (event) {
+      if (event.wasClean) {
+        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        console.log("[close] Connection died");
+      }
+    };
+
+    socket.onerror = function (error) {
+      alert(`[error] ${error.message}`);
+    };
+  });
 }

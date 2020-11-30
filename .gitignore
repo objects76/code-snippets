@@ -23,7 +23,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # native
-/Debug
-/x64
-/.vs
+Debug/
+Release/
+x64/
+.vs/
 
+# python
+.idea/
