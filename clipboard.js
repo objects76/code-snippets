@@ -15,7 +15,7 @@ export default class Clipboard {
     this._emitter = new EventEmitter();
   }
 
-  async setActive(active) {
+  setActive = async active => {
     if (!this.use) return;
 
     if (this._active != active) {
@@ -49,7 +49,7 @@ export default class Clipboard {
         this._emitter.emit("active", this._active);
       }
     }
-  }
+  };
 
   waitRead = async () => {
     if (!this._isAvailable()) return;
@@ -60,7 +60,7 @@ export default class Clipboard {
   };
 
   // set local clipboard as data.
-  waitWrite = async (data) => {
+  waitWrite = async data => {
     if (!this._isAvailable()) return;
     if (data === this._data) return; // prevent loop-back?
     this._data = data;
@@ -85,11 +85,11 @@ export default class Clipboard {
   }
 
   onRead(fn) {
-    this._emitter.on("read", (data) => fn(data));
+    this._emitter.on("read", data => fn(data));
   }
 
   onWrite(fn) {
-    this._emitter.on("write", (data) => fn(data));
+    this._emitter.on("write", data => fn(data));
   }
 
   destroy() {
@@ -118,11 +118,11 @@ export default class Clipboard {
     }
   };
 
-  static setClipboardBlob = async (blob) => {
+  static setClipboardBlob = async blob => {
     function asPngBlob(blob) {
       if (blob.type === "image/png") return Promise.resolve(blob);
       if (blob.type === "image/jpeg") {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           const img = new Image();
           img.src = URL.createObjectURL(blob);
 
@@ -155,7 +155,7 @@ if (window.test_clipboard) {
     function asPngBlob(blob) {
       if (blob.type === "image/png") return Promise.resolve(blob);
       if (blob.type === "image/jpeg") {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           const img = new Image();
           img.src = URL.createObjectURL(blob);
 
@@ -180,12 +180,12 @@ if (window.test_clipboard) {
 
   const clipboard = new Clipboard(true);
 
-  clipboard.onActive((b) => console.log("onActive:", b));
-  clipboard.onPrompt((b) => console.log("onPrompt:", b));
-  clipboard.onGranted((b) => console.log("onGranted:", b));
-  clipboard.onDenied((b) => console.log("onDenied:", b));
-  clipboard.onRead((data) => console.log("onRead", data));
-  clipboard.onWrite((data) => console.log("onWrite", data));
+  clipboard.onActive(b => console.log("onActive:", b));
+  clipboard.onPrompt(b => console.log("onPrompt:", b));
+  clipboard.onGranted(b => console.log("onGranted:", b));
+  clipboard.onDenied(b => console.log("onDenied:", b));
+  clipboard.onRead(data => console.log("onRead", data));
+  clipboard.onWrite(data => console.log("onWrite", data));
 
   addTestWidget(`<button>test</button>`, async () => {
     consoleBind("[test]");
@@ -262,7 +262,7 @@ if (window.test_clipboard) {
     const active = this.widget.innerText.startsWith("active ");
     console.log("Clipboard.setActive() test");
     clipboard.setActive(active);
-    clipboard.onActive((activated) => {
+    clipboard.onActive(activated => {
       this.widget.innerText = activated ? "inactive clipboard" : "active clipboard";
     });
   });

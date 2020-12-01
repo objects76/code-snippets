@@ -9,20 +9,20 @@ window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || 
 window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
 
 const getKey = (path, seq) => path + ":" + ("00" + seq).slice(-3); // up to (MAX_CHUNK_SIZE_*1000).
-const getPath = (key) => key.slice(0, -4);
-const nextChar = (c) => String.fromCharCode(c.charCodeAt(0) + 1);
+const getPath = key => key.slice(0, -4);
+const nextChar = c => String.fromCharCode(c.charCodeAt(0) + 1);
 
 const STORE0 = "store0";
 export default class BlobIDB {
   constructor(dbname = "blob.test.db") {
     this.idb;
     const request = window.indexedDB.open(dbname, 1);
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = event => {
       const db = event.target.result;
       const store = db.createObjectStore(STORE0);
     };
 
-    request.onsuccess = (evt) => {
+    request.onsuccess = evt => {
       this.idb = request.result;
       console.log(`'${dbname}' is opened`);
     };
@@ -31,10 +31,10 @@ export default class BlobIDB {
     this.idb.close();
     this.idb = undefined;
   };
-  static drop = (dbname) => {
+  static drop = dbname => {
     const request = window.indexedDB.deleteDatabase(dbname);
-    request.onsuccess = (evt) => console.log(`${dbname} successfully deleted`);
-    request.onerror = (evt) => console.error(`${dbname} error when delete database`);
+    request.onsuccess = evt => console.log(`${dbname} successfully deleted`);
+    request.onerror = evt => console.error(`${dbname} error when delete database`);
     this.idb = undefined;
   };
 
@@ -51,7 +51,7 @@ export default class BlobIDB {
 
     const tx = this.idb.transaction([STORE0], "readwrite", { durability: "relaxed" });
     const request = tx.objectStore(STORE0).put({ blob, blobOffset }, key);
-    request.onsuccess = (evt) => console.debug(`${evt.target.result} done for ${key}`);
+    request.onsuccess = evt => console.debug(`${evt.target.result} done for ${key}`);
 
     //return new Promise((resolve, reject) => setuptx(tx, resolve, reject));
   };
@@ -61,7 +61,7 @@ export default class BlobIDB {
 
     const tx = this.idb.transaction([STORE0], "readonly");
     var request = tx.objectStore(STORE0).openCursor(range, "prev");
-    request.onsuccess = (event) => {
+    request.onsuccess = event => {
       const cursor = event.target.result;
       if (cursor) {
         const chunkSeq = Number(cursor.key.slice(-3));
@@ -76,7 +76,7 @@ export default class BlobIDB {
     return new Promise((resolve, reject) => setuptx(tx, resolve, reject));
   };
 
-  getBlob = (fullPath) => {
+  getBlob = fullPath => {
     return new Promise((resolve, reject) => {
       const range = IDBKeyRange.bound(fullPath + ":", fullPath + nextChar(":"), false, true);
       const tx = this.idb.transaction([STORE0], "readonly");
@@ -86,7 +86,7 @@ export default class BlobIDB {
         console.debug(`all blobs = #${request.result.length}`);
         resolve(
           new Blob(
-            request.result.map((v) => v.blob),
+            request.result.map(v => v.blob),
             { type: BLOB_TYPE_ }
           )
         );
@@ -95,7 +95,7 @@ export default class BlobIDB {
   };
 
   // delete file
-  delete = async (folder) => {
+  delete = async folder => {
     const tx = this.idb.transaction([STORE0], "readwrite");
     const range = IDBKeyRange.bound(folder + ":", folder + nextChar(":"), false, true);
     tx.objectStore(STORE0).delete(range);
@@ -104,19 +104,19 @@ export default class BlobIDB {
     });
   };
 
-  exist = async (fullPath) => {
+  exist = async fullPath => {
     const tx = this.idb.transaction([STORE0], "readonly");
     const request = tx.objectStore(STORE0).get(getKey(fullPath, 0));
 
     let existed = false;
-    request.onsuccess = (evt) => (existed = !!evt.target.result);
+    request.onsuccess = evt => (existed = !!evt.target.result);
 
     return new Promise((resolve, reject) => {
       setuptx(tx, () => resolve(existed), reject);
     });
   };
 
-  rmdir = async (folder) => {
+  rmdir = async folder => {
     const tx = this.idb.transaction([STORE0], "readwrite");
     if (folder) {
       if (folder.endsWith("/")) folder = folder.slice(0, -1);
@@ -132,7 +132,7 @@ export default class BlobIDB {
   };
 
   // return list of files in idb.
-  dir = async (folder) => {
+  dir = async folder => {
     let range;
     if (folder) {
       if (folder.endsWith("/")) folder = folder.slice(0, -1);
@@ -143,7 +143,7 @@ export default class BlobIDB {
 
     var request = tx.objectStore(STORE0).openCursor(range, "prev");
     const pathlist = new Map();
-    request.onsuccess = (event) => {
+    request.onsuccess = event => {
       const cursor = event.target.result;
       if (cursor) {
         const fullPath = getPath(cursor.key);
@@ -242,7 +242,7 @@ if (window.IDBBlobTest) {
 
   addTestWidget(
     `<input type='file' multiple/>`,
-    async (evt) => {
+    async evt => {
       for (const file of evt.target.files) {
         //idbdb.upload(file, "/upload");
         writer = new BlobIDB.BlobWriter("/upload/" + file.name, idbdb);
@@ -258,7 +258,7 @@ if (window.IDBBlobTest) {
   // write
   //
   let writer;
-  addTestWidget(`<button>WRITE FILE</button>`, async (evt) => {
+  addTestWidget(`<button>WRITE FILE</button>`, async evt => {
     if (writer) return;
 
     let path = document.querySelector("#fs-path").value;
@@ -291,7 +291,7 @@ if (window.IDBBlobTest) {
     }, SEND_INTERVAL);
   });
 
-  addTestWidget(`<button>STOP WRITE and VERIFY</button>`, async (evt) => {
+  addTestWidget(`<button>STOP WRITE and VERIFY</button>`, async evt => {
     await writer?.close(); // it means un-expected stop(lik closing browser tab).
     writer = undefined;
     document.querySelector("#read").click();
@@ -299,7 +299,7 @@ if (window.IDBBlobTest) {
   //
   // read file
   //
-  addTestWidget(`<button id='read'>VERIFY FILE</button>`, async (evt) => {
+  addTestWidget(`<button id='read'>VERIFY FILE</button>`, async evt => {
     const path = document.querySelector("#fs-path").value;
     if (path.length < 3) return;
     document.querySelector("#fs-path").value = "";
@@ -312,7 +312,7 @@ if (window.IDBBlobTest) {
   //
   // download
   //
-  addTestWidget(`<button>DOWNLOAD</button>`, async (evt) => {
+  addTestWidget(`<button>DOWNLOAD</button>`, async evt => {
     const path = document.querySelector("#fs-path").value;
     if (path.length < 3) return;
 
@@ -324,7 +324,7 @@ if (window.IDBBlobTest) {
   //
   // dir
   //
-  addTestWidget(`<button id='dir'>DIR</button>`, async (evt) => {
+  addTestWidget(`<button id='dir'>DIR</button>`, async evt => {
     let path = document.querySelector("#fs-path").value;
     if (path.length < 3) path = undefined;
 
@@ -344,7 +344,7 @@ if (window.IDBBlobTest) {
   //
   // rmdir
   //
-  addTestWidget(`<button>RMDIR</button>`, async (evt) => {
+  addTestWidget(`<button>RMDIR</button>`, async evt => {
     let path = document.querySelector("#fs-path").value;
     if (path.length < 3) path = undefined;
 
@@ -354,7 +354,7 @@ if (window.IDBBlobTest) {
   //
   // existed
   //
-  addTestWidget(`<button>EXISTED</button>`, async (evt) => {
+  addTestWidget(`<button>EXISTED</button>`, async evt => {
     let path = document.querySelector("#fs-path").value;
     if (path.length < 3) return;
 
@@ -364,7 +364,7 @@ if (window.IDBBlobTest) {
   //
   // list ui
   //
-  addTestWidget("<ul id='ui-dir'></ul>", (evt) => {
+  addTestWidget("<ul id='ui-dir'></ul>", evt => {
     evt.stopPropagation();
     evt.preventDefault();
     if (evt.target.hash) document.querySelector("#fs-path").value = window.decodeURI(evt.target.hash.substring(1));

@@ -38,7 +38,7 @@ export default function EventEmitter() {
     } else if (typeof this.events[type] === "function") {
       if (this.events[type] === listener) delete this.events[type];
     } else {
-      this.events[type] = this.events[type].filter((item) => item !== listener);
+      this.events[type] = this.events[type].filter(item => item !== listener);
       if (this.events[type].length === 1) this.events[type] = this.events[type][0];
     }
 
@@ -99,7 +99,7 @@ export default function EventEmitter() {
   };
 
   // for debugging.
-  this.onceListeners = (type) => {
+  this.onceListeners = type => {
     const types = [];
     const count = (type, listeners) => {
       if (!listeners) return;
@@ -120,7 +120,7 @@ export default function EventEmitter() {
     return types;
   };
 
-  this.listeners = (type) => {
+  this.listeners = type => {
     const types = [];
     const count = (type, listeners) => {
       if (!listeners) return;
