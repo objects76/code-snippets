@@ -1,4 +1,5 @@
 import add from "./clearall.js";
+
 export const KEY_CODE = {
   TAP: 9,
   SHIFT: 16,
@@ -64,6 +65,7 @@ export default class KeyboardControl {
 
   // listener.
   _keyDownListener = (event) => {
+    event.preventDefault();
     this._keyDown(event.keyCode, event.key, event.code);
 
     if (PREVENT_KEYS.includes(event.keyCode)) {
@@ -72,6 +74,7 @@ export default class KeyboardControl {
   };
 
   _keyUpListener = (event) => {
+    event.preventDefault();
     this._keyUp(event.keyCode, event.key, event.code);
 
     if (PREVENT_KEYS.includes(event.keyCode)) {
