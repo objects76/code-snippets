@@ -244,9 +244,9 @@ if (window.test_KeyboardControl) {
       downloadUrl("./native/browserhelper_win/x64/Release/browserhelper.dll", "browserhelper.dll");
     }
   };
-  addTestWidget(`<button>custom protocol</button>`, () => {
+  addTestWidget(`<button>launch helper</button>`, () => {
     try {
-      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 5000);
+      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 3000);
     } catch (err) {
       console.error(err);
     }
@@ -254,9 +254,29 @@ if (window.test_KeyboardControl) {
 
   addTestWidget(`<button>launch helper & connect to the helper</button>`, () => {
     try {
-      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 5000);
+      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 3000);
     } catch (err) {
       console.error(err);
     }
   });
+
+  addTestWidget(`<button>windows custom protocol</button>`, () => {
+    const protocol = [
+      "ms-settings-screenrotation:",
+      "ms-screenclip:",
+      "ms-taskswitcher:",
+      "ms-sttoverlay:",
+      "ms-settings-workplace:",
+      "ms-settings-bluetooth:",
+      "ms-settings:",
+    ];
+    customProtocolCheck(
+      protocol[0],
+      () => console.error("failed"),
+      () => console.error("ok"),
+      5000
+    );
+  });
 }
+
+// custom protocol
