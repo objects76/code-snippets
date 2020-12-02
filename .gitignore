@@ -31,3 +31,5 @@ x64/
 
 # python
 .idea/
+debug.log
+native/__pycache__/helper.cpython-37.pyc

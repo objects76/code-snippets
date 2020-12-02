@@ -68,18 +68,14 @@ export default class KeyboardControl {
     event.preventDefault();
     this._keyDown(event.keyCode, event.key, event.code);
 
-    if (PREVENT_KEYS.includes(event.keyCode)) {
-      event.preventDefault();
-    }
+    //if (PREVENT_KEYS.includes(event.keyCode)) event.preventDefault();
   };
 
   _keyUpListener = (event) => {
     event.preventDefault();
     this._keyUp(event.keyCode, event.key, event.code);
 
-    if (PREVENT_KEYS.includes(event.keyCode)) {
-      event.preventDefault();
-    }
+    //if (PREVENT_KEYS.includes(event.keyCode)) event.preventDefault();
   };
 
   _matchedCtrlAltDel() {
@@ -94,6 +90,14 @@ export default class KeyboardControl {
 //
 //
 //
+
+const console_backup = { ...console };
+console.log = (...args) => {
+  const msg = args.join(" ");
+  console_backup.log(msg);
+  document.querySelector("#story").innerText += msg + "\r\n";
+};
+
 if (window.test_KeyboardControl) {
   const TEST = 4430;
   const FOCUS = 4431;
@@ -174,5 +178,10 @@ if (window.test_KeyboardControl) {
     socket.onerror = function (error) {
       alert(`[error] ${error.message}`);
     };
+  });
+
+  addTestWidget(`<button>fullscreen</button>`, () => {
+    navigator.keyboard?.lock();
+    document.documentElement.requestFullscreen();
   });
 }

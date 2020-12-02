@@ -2,8 +2,9 @@
 # -*- coding: UTF-8 -*-
 # ref: https://pystray.readthedocs.io/en/latest/usage.html
 
+# Pillow
 from PIL import Image
-
+import helper
 
 def create_image():
     img = Image.open('internet2.ico')
@@ -67,7 +68,20 @@ def submenu_with_notification():
     trayApp.run()
 
 
+def ws_server_thread():
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    helper.ws_server(4430)
+    pass
+
 if __name__ == '__main__':
-    # checkable()
+    import threading
+    import sys
+    t = threading.Thread(target=ws_server_thread)
+    t.start()
     submenu_with_notification()
+
+    # checkable()
+    sys.exit()
     pass

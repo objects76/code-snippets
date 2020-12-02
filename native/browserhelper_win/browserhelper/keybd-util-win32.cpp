@@ -125,21 +125,21 @@ private:
 				auto kbdll = (KBDLLHOOKSTRUCT*)lParam;
 				switch (kbdll->vkCode)
 				{
-				case VK_F1:
-				case VK_F2:
-				case VK_F3:
-				case VK_F4:
-				case VK_F5:
-				case VK_F6:
-				case VK_F7:
-				case VK_F8:
-				case VK_F9:
-				case VK_F10:
-				case VK_F11:
-				case VK_F12:
-					// convert F1~F12 => F13~F24
-					kbdll->scanCode = 0x64 + (kbdll->vkCode - VK_F1); // scancode: F13 => 0x64
-					kbdll->vkCode += 0xc;
+				//case VK_F1:
+				//case VK_F2:
+				//case VK_F3:
+				//case VK_F4:
+				//case VK_F5:
+				//case VK_F6:
+				//case VK_F7:
+				//case VK_F8:
+				//case VK_F9:
+				//case VK_F10:
+				//case VK_F11:
+				//case VK_F12:
+				//	// convert F1~F12 => F13~F24
+				//	kbdll->scanCode = 0x64 + (kbdll->vkCode - VK_F1); // scancode: F13 => 0x64
+				//	kbdll->vkCode += 0xc;
 					// passthrough
 
 				case VK_SNAPSHOT: // PrtSc/SysRq

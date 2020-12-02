@@ -5,17 +5,14 @@
 import os
 import ctypes as c
 
+
+
 TEST = 4430
 FOCUS = 4431
 
 
 class BrowserHelper:
     def __init__(self):
-        self.dllpath = os.path.join(os.path.dirname(__file__), 'browserhelper.dll')
-        if not os.path.isfile(self.dllpath):
-            subpath = r'browserhelper_win\x64\Release\browserhelper.dll'
-            self.dllpath = os.path.join(os.path.dirname(__file__), subpath)
-
         self.dllhandle = None
         self.title = None
 
@@ -60,7 +57,6 @@ class BrowserHelper:
         func.argtypes = [c.c_bool]
         func(pause)
         print('pause' if pause else 'resume')
-
 
 def ws_server(port):
     import asyncio
@@ -116,12 +112,13 @@ def ws_server(port):
     websoc_svr = websockets.serve(accept, "localhost", port);
 
     # waiting
-    asyncio.get_event_loop().run_until_complete(websoc_svr);
-    asyncio.get_event_loop().run_forever();
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(websoc_svr)
+    loop.run_forever()
 
 
 if __name__ == '__main__':
     # loaddll()
-    ws_server(4430);
+    ws_server(4430)
     print('---------- done --------------')
     pass
