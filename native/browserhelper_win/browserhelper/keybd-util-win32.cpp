@@ -11,7 +11,6 @@
 #include "logger.h"
 
 #define js_throw_error(func, msg)   LOGE << (msg)
-#define EXPORT  extern "C" __declspec(dllexport)
 HINSTANCE hInstanceDll = nullptr;
 
 void jslog(const char* pos, int line, const char* fmt, ...)
@@ -125,6 +124,7 @@ private:
 				auto kbdll = (KBDLLHOOKSTRUCT*)lParam;
 				switch (kbdll->vkCode)
 				{
+				// Comment out: functional key handled in browser itself.
 				//case VK_F1:
 				//case VK_F2:
 				//case VK_F3:

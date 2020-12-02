@@ -4,8 +4,8 @@
 
 import os
 import ctypes as c
-
-
+import sys
+import winreg
 
 TEST = 4430
 FOCUS = 4431
@@ -24,17 +24,22 @@ class BrowserHelper:
             func()
             del self.dllhandle
 
+    def load(self):
+        if not self.dllhandle:
+            dllpath = os.path.join(os.path.dirname(__file__), 'browserhelper.dll')
+            print('dllpath1=', dllpath)
+            if not os.path.isfile(dllpath):
+                subpath = r'browserhelper_win\x64\Release\browserhelper.dll'
+                dllpath = os.path.join(os.path.dirname(__file__), subpath)
+                print('dllpath2=', dllpath)
+            self.dllhandle = c.CDLL(dllpath)
+        return self.dllhandle is not None
+
     def start(self, title):
-        if self.dllhandle and self.title == title:
+        if self.load() and self.title == title:
             # already loaded
             return True
 
-        dllpath = os.path.join(os.path.dirname(__file__), 'browserhelper.dll')
-        if not os.path.isfile(dllpath):
-            subpath = r'browserhelper_win\x64\Release\browserhelper.dll'
-            dllpath = os.path.join(os.path.dirname(__file__), subpath)
-
-        self.dllhandle = c.CDLL(dllpath)
         if self.dllhandle:
             func = self.dllhandle.startKeybdMonitorByTitleW
             func.restype = c.c_bool
@@ -50,13 +55,70 @@ class BrowserHelper:
         return self.dllhandle is not None
 
     def pause(self, pause):
-        if self.dllhandle is None:
+        if not self.load():
             return
         func = self.dllhandle.pauseResumeKeybdMonitor
         func.restype = c.c_bool
         func.argtypes = [c.c_bool]
         func(pause)
         print('pause' if pause else 'resume')
+
+
+def unregister_as_custom_protocol():
+    protocol = 'jjkim-protocol'
+    path = "Software\\Classes\\" + protocol
+
+    def delete_sub_key(root, sub):
+        try:
+            open_key = winreg.OpenKey(root, sub, 0, winreg.KEY_ALL_ACCESS)
+            num, _, _ = winreg.QueryInfoKey(open_key)
+            for i in range(num):
+                child = winreg.EnumKey(open_key, 0)
+                delete_sub_key(open_key, child)
+            try:
+                winreg.DeleteKey(open_key, '')
+            except Exception:
+                # log deletion failure
+                pass
+            finally:
+                winreg.CloseKey(open_key)
+        except Exception:
+            pass
+
+    root = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+    delete_sub_key(root, path)
+    winreg.CloseKey(root)
+
+
+# log opening/closure failure
+
+def register_as_custom_protocol():
+    protocol = 'jjkim-protocol'
+    exepath = sys.executable
+    path = "Software\\Classes\\" + protocol
+
+    # check existance.
+    try:
+        reg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+        key = winreg.OpenKey(reg, path, 0, winreg.KEY_WRITE)
+        winreg.CloseKey(key)
+        winreg.CloseKey(reg)
+        return True
+    except WindowsError:
+        pass
+
+    try:
+        key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, path)
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f'URL:{protocol}')
+        winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, '')
+        winreg.CloseKey(key)
+
+        key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, path + r'\Shell\Open\command')
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f'"{exepath}" "%1"')
+        winreg.CloseKey(key)
+    except EnvironmentError:
+        print("Encountered problems writing into the Registry...")
+    pass
 
 def ws_server(port):
     import asyncio
@@ -116,9 +178,20 @@ def ws_server(port):
     loop.run_until_complete(websoc_svr)
     loop.run_forever()
 
+def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == '--unreg':
+        unregister_as_custom_protocol()
+        return
+    for arg in sys.argv:
+        print('arg=', arg)
+
+    register_as_custom_protocol()
+    ws_server(4430)
+    return
 
 if __name__ == '__main__':
-    # loaddll()
-    ws_server(4430)
+    main()
     print('---------- done --------------')
     pass
+
+

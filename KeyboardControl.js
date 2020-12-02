@@ -98,38 +98,100 @@ console.log = (...args) => {
   document.querySelector("#story").innerText += msg + "\r\n";
 };
 
+var jjkimns = {};
+jjkimns.WebSocket = class jjkim_websocket {
+  constructor() {
+    this.socket;
+
+    this.onconnect;
+    this.onmessage;
+    this.onclose;
+  }
+
+  close() {
+    if (!this.socket) return;
+    this.socket.close();
+    this.socket = undefined;
+  }
+
+  connect(url) {
+    this.close();
+    this.socket = new WebSocket(url);
+    this.socket.binaryType = "arraybuffer";
+
+    this.socket.onopen = (event) => {
+      console.log("[open] Connection established");
+      if (this.onconnect) this.onconnect(event);
+    };
+
+    this.socket.onmessage = (event) => {
+      const dv = new DataView(event.data);
+      const type = dv.getInt32(0, true);
+      if (this.onmessage) {
+        this.onmessage(type, new DataView(event.data, 4));
+      } else {
+        console.log(`[message] Data received from server: ${event.data.byteLength}, type=${type}`);
+      }
+    };
+
+    this.socket.onclose = function (event) {
+      if (event.wasClean) {
+        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        if (this.onclose) this.onclose();
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        console.log(`[close] Connection died, code=${event.code} reason=${event.reason}`);
+        if (this.onclose) this.onclose(event.code, event.reason);
+      }
+    };
+
+    this.socket.onerror = function (error) {
+      alert(`[error] ${error.message}`);
+      if (this.onclose) this.onclose(error.code, error.reason); // TODO: Error object?
+    };
+  }
+
+  send(type, data) {
+    if (!this.socket) {
+      console.error("no socket");
+      return;
+    }
+
+    if (typeof data === "string") {
+      const u8data = BlobHelper.stringToUint8Array(data);
+      const buffer = new Uint8Array(4 + u8data.length);
+
+      new DataView(buffer.buffer, 0).setInt32(0, type, true);
+      buffer.set(u8data, 4);
+
+      this.socket.send(buffer.buffer);
+    }
+  }
+};
+
+var BlobHelper = {
+  stringToUint8Array: (str) => new TextEncoder().encode(str, "utf-8"),
+  toString: (blob) => new TextDecoder("utf-8").decode(blob),
+};
+
+//
+//
+//
 if (window.test_KeyboardControl) {
   const TEST = 4430;
   const FOCUS = 4431;
   const START = 4432;
 
   let socket;
-  function sendws(type, data) {
-    if (!socket) {
-      console.log("no socket");
-      return;
-    }
-
-    if (typeof data === "string") {
-      const enc = new TextEncoder();
-      const u8data = enc.encode(data, "utf-8");
-      const buffer = new Uint8Array(4 + u8data.length);
-
-      new DataView(buffer.buffer, 0).setInt32(0, type, true);
-      buffer.set(u8data, 4);
-
-      socket.send(buffer.buffer);
-      console.log("sent ", buffer.length, "bytes", data.length);
-    }
-  }
 
   window.addEventListener("focus", () => {
     console.log("focus");
-    sendws(FOCUS, document.title);
+    socket?.send(FOCUS, document.title);
   });
   window.addEventListener("blur", () => {
     console.log("blur");
-    sendws(FOCUS, "");
+    socket?.send(FOCUS, "");
   });
 
   const keyboard = new KeyboardControl();
@@ -148,40 +210,53 @@ if (window.test_KeyboardControl) {
   addTestWidget(`<textarea id="story" rows="5" cols="33" style="width:100%"/>`);
 
   addTestWidget(`<button id='activate'>connect to helper</button>`, function () {
-    socket = new WebSocket("ws://localhost:4430/helper");
-    socket.binaryType = "arraybuffer";
+    socket = new jjkimns.WebSocket();
+    socket.connect("ws://localhost:4430/helper");
 
-    socket.onopen = function (e) {
-      console.log("[open] Connection established");
-      sendws(FOCUS, document.title);
-    };
-
-    socket.onmessage = function (event) {
-      const dv = new DataView(event.data);
-      const type = dv.getInt32(0, true);
-
-      var decoder = new TextDecoder("utf-8");
-      var decodedString = decoder.decode(new DataView(event.data, 4));
-      console.log(`[message] Data received from server: ${event.data.byteLength}, ${type}/${decodedString}`);
-    };
-
-    socket.onclose = function (event) {
-      if (event.wasClean) {
-        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-      } else {
-        // e.g. server process killed or network down
-        // event.code is usually 1006 in this case
-        console.log("[close] Connection died");
-      }
-    };
-
-    socket.onerror = function (error) {
-      alert(`[error] ${error.message}`);
-    };
+    socket.onopen = () => socket.send(FOCUS, document.title);
+    socket.onmessage = (type, blob) =>
+      console.log(`[message] Data received from server: ${type}/${BlobHelper.toString(blob)}`);
+    socket.onclose = (code, reason) => console.log(`[close] Connection closed, code=${code} reason=${reason}`);
   });
 
   addTestWidget(`<button>fullscreen</button>`, () => {
     navigator.keyboard?.lock();
     document.documentElement.requestFullscreen();
+  });
+
+  // https://github.com/vireshshah/custom-protocol-check
+  const helperOK = () => {
+    socket = new jjkimns.WebSocket();
+    socket.connect("ws://localhost:4430/helper");
+
+    socket.onopen = () => socket.send(FOCUS, document.title);
+    socket.onmessage = (type, blob) =>
+      console.log(`[message] Data received from server: ${type}/${BlobHelper.toString(blob)}`);
+    socket.onclose = (code, reason) => console.log(`[close] Connection closed, code=${code} reason=${reason}`);
+  };
+  const helperNG = () => {
+    // https://chromium.googlesource.com/chromium/src/+/master/chrome/browser/external_protocol/external_protocol_handler.cc#123:~:text=because%20the%20scheme%20does%20not%20have%20a%20registered%20handler.%22)%3B
+    // - Failed to launch 'jjkim-protocol://params' because the scheme does not have a registered handler.
+    console.log("No handler....");
+    if (confirm("Setup helper module to use more fluent UX!\r\nYou want?")) {
+      //alert("download exe and register as custom service once.");
+      downloadUrl("./native/helper.exe", "helper.exe");
+      downloadUrl("./native/browserhelper_win/x64/Release/browserhelper.dll", "browserhelper.dll");
+    }
+  };
+  addTestWidget(`<button>custom protocol</button>`, () => {
+    try {
+      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 5000);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  addTestWidget(`<button>launch helper & connect to the helper</button>`, () => {
+    try {
+      customProtocolCheck("jjkim-protocol://params", helperNG, helperOK, 5000);
+    } catch (err) {
+      console.error(err);
+    }
   });
 }

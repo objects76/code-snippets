@@ -159,12 +159,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CustomURLProtocol.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="staging.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CustomURLProtocol.cpp" />
     <ClCompile Include="keybd-util-win32.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

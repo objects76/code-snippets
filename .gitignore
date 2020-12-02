@@ -30,6 +30,8 @@ x64/
 .vs/
 
 # python
-.idea/
-debug.log
-native/__pycache__/helper.cpython-37.pyc
+native/.idea/
+native/__pycache__/
+native/build/
+native/dist/
+
