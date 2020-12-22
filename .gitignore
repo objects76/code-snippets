@@ -35,3 +35,4 @@ native/__pycache__/
 native/build/
 native/dist/
 
+native/helper.spec

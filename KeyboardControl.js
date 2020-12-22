@@ -135,15 +135,10 @@ jjkimns.WebSocket = class jjkim_websocket {
     };
 
     this.socket.onclose = function (event) {
-      if (event.wasClean) {
-        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-        if (this.onclose) this.onclose();
-      } else {
-        // e.g. server process killed or network down
-        // event.code is usually 1006 in this case
-        console.log(`[close] Connection died, code=${event.code} reason=${event.reason}`);
-        if (this.onclose) this.onclose(event.code, event.reason);
-      }
+      // e.g. server process killed or network down
+      // event.code is usually 1006 in this case
+      console.log(`[close] Connection died, code=${event.code} reason=${event.reason}`);
+      if (this.onclose) this.onclose(event.code, event.reason);
     };
 
     this.socket.onerror = function (error) {
@@ -159,7 +154,7 @@ jjkimns.WebSocket = class jjkim_websocket {
     }
 
     if (typeof data === "string") {
-      const u8data = BlobHelper.stringToUint8Array(data);
+      const u8data = new TextEncoder().encode(data, "utf-8");
       const buffer = new Uint8Array(4 + u8data.length);
 
       new DataView(buffer.buffer, 0).setInt32(0, type, true);
@@ -241,7 +236,6 @@ if (window.test_KeyboardControl) {
     if (confirm("Setup helper module to use more fluent UX!\r\nYou want?")) {
       //alert("download exe and register as custom service once.");
       downloadUrl("./native/helper.exe", "helper.exe");
-      downloadUrl("./native/browserhelper_win/x64/Release/browserhelper.dll", "browserhelper.dll");
     }
   };
   addTestWidget(`<button>launch helper</button>`, () => {
@@ -262,7 +256,8 @@ if (window.test_KeyboardControl) {
 
   addTestWidget(`<button>windows custom protocol</button>`, () => {
     const protocol = [
-      "ms-settings-screenrotation:",
+      "ms-paint:",
+      //"ms-settings-screenrotation:",
       "ms-screenclip:",
       "ms-taskswitcher:",
       "ms-sttoverlay:",

@@ -33,7 +33,12 @@ class BrowserHelper:
                 dllpath = os.path.join(os.path.dirname(__file__), subpath)
                 print('dllpath2=', dllpath)
             self.dllhandle = c.CDLL(dllpath)
-        return self.dllhandle is not None
+        if not self.dllhandle:
+            print('can not load', dllpath)
+            return False
+
+        # print('loaded', self.dllhandle)
+        return True
 
     def start(self, title):
         if self.load() and self.title == title:
@@ -120,14 +125,15 @@ def register_as_custom_protocol():
         print("Encountered problems writing into the Registry...")
     pass
 
+
 def ws_server(port):
     import asyncio
     import websockets
     # call back for websockets.serve(accept, port)
 
     async def accept(ws, path):
-        helper = BrowserHelper()
         print('path=', path)
+        helper = BrowserHelper()
 
         async def send(type1, data):
             blob1 = type1.to_bytes(4, 'little') + data.encode('utf-8')
@@ -158,7 +164,7 @@ def ws_server(port):
                     print(f"received data = {len(data_rcv)}, type={type(data_rcv)}, protocol={protocol}");
                 # await websocket.send("websock_svr send data = " + data_rcv); # send received data
             except websockets.exceptions.ConnectionClosedOK as e:
-                print('closed', e)
+                print('closed:', e)
                 # raise
                 break
             except websockets.exceptions.ConnectionClosedError as e:
@@ -167,16 +173,20 @@ def ws_server(port):
                 break
             pass  # while
         if helper:
+            print('delete helper')
             del helper
+        loop = asyncio.get_event_loop()
+        loop.stop()
 
     # websocket server creation
     print(f'start websocket server on ws://localhost:{port}')
-    websoc_svr = websockets.serve(accept, "localhost", port);
+    websoc_svr = websockets.serve(accept, "localhost", port)
 
     # waiting
     loop = asyncio.get_event_loop()
     loop.run_until_complete(websoc_svr)
     loop.run_forever()
+
 
 def main():
     if len(sys.argv) >= 2 and sys.argv[1] == '--unreg':
@@ -189,9 +199,8 @@ def main():
     ws_server(4430)
     return
 
+
 if __name__ == '__main__':
     main()
     print('---------- done --------------')
     pass
-
-
